@@ -46,15 +46,13 @@ void sendSerial()
       calculateCRC(queueHeaders.first().uid);
     }
     while (mySerial_availableForWrite() > 0 && txNdx < queueHeaders.first().PDUlen) {
-
       mySerial.write(queuePDUs[txNdx]);                // send func and data
-
       // Serial.print(queuePDUs[txNdx], HEX);
       // Serial.print(' ');
-
       calculateCRC(queuePDUs[txNdx]);
       txNdx++;
     }
+
     if (mySerial_availableForWrite() > 1 && txNdx == queueHeaders.first().PDUlen) {
       // In Modbus TCP mode we must add CRC (in Modbus RTU over TCP, CRC is already in queuePDUs)
       if (!localConfig.enableRtuOverTcp || queueHeaders.first().clientNum == SCAN_REQUEST) {

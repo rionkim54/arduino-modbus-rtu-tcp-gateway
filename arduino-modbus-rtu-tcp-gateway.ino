@@ -233,6 +233,8 @@ unsigned int ethRxCount = 0;
 
 /****** SETUP: RUNS ONCE ******/
 
+int curSensor = A0;
+
 void setup()
 {
   CreateTrulyRandomSeed();
@@ -260,9 +262,27 @@ void setup()
 }
 
 /****** LOOP ******/
+float sensorValue;
+uint16_t sensorArray[6];
 
+void loop_main()
+{
+  sensorValue = analogRead(curSensor);
+  float Result = ((sensorValue-204.0))/(1024.0-204.0)*150;  //204 is offset, 4mAmp is 0
+
+  sensorArray[0] = Result * 100;
+
+  Serial.println(Result-40); 
+}
+
+int timeout = 0;
 void loop()
 {
+
+  timeout += 1;
+  if(timeout % 10000 == 0)
+    loop_main();
+
   recvUdp();
   recvTcp();
   processRequests();
