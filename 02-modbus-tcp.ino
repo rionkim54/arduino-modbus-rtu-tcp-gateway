@@ -105,7 +105,50 @@ void recvTcp()
     // Modbus RTU frame: [0] address.....
     client.read(tcpInBuffer, sizeof(tcpInBuffer));
     client.flush();
+
+
+      Serial.print("recvTcp=");
+      for(int i = 0; i < packetSize; i++) {
+          Serial.print(tcpInBuffer[i], HEX);
+          Serial.print(",");
+      }
+      Serial.println();
+
+    if(tcpInBuffer[0] == 0x00) {
+      // 0,3,0,0,0,6,C4,19,
+
+      int size = tcpInBuffer[5];
+
+      byte tcpOutBuffer[32];
+      tcpOutBuffer[0] = tcpInBuffer[0];
+      tcpOutBuffer[1] = tcpInBuffer[1];
+      tcpOutBuffer[2] = size*2;
+
+      crc = 0xFFFF;
+      calculateCRC(tcpOutBuffer[0]);
+      calculateCRC(tcpOutBuffer[1]);
+      calculateCRC(tcpOutBuffer[2]);
+        
+        
+      for(int i = 0; i < size; i ++) {
+
+          tcpOutBuffer[3 + i * 2] = highByte(sensorArray[i]);
+          tcpOutBuffer[3 + i * 2 + 1] = lowByte(sensorArray[i]);
+
+          calculateCRC(tcpOutBuffer[3 + i * 2]);
+          calculateCRC(tcpOutBuffer[3 + i * 2 + 1]);
+      }
+
+      tcpOutBuffer[3+size*2] = lowByte(crc);
+      tcpOutBuffer[3+size*2 + 1] = highByte(crc);
+
+      client.write(tcpOutBuffer,3 + size*2 + 2 );
+
+      return ;
+    }
+
     byte errorCode = checkRequest(tcpInBuffer, packetSize);
+
     byte pduStart;        // first byte of Protocol Data Unit (i.e. Function code)
     if (localConfig.enableRtuOverTcp) pduStart = 1;   // In Modbus RTU, Function code is second byte (after address)
     else pduStart = 7;            // In Modbus TCP/UDP, Function code is 8th byte (after address)
